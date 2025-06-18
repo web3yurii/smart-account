@@ -2,17 +2,17 @@
 pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
-import {EntryPoint} from "../src/Account.sol";
+import {AccountFactory} from "../src/Account.sol";
 
-contract AccountScript is Script {
-    EntryPoint public entrypoint;
+contract AccountFactoryScript is Script {
+    AccountFactory public accountFactory;
 
     function setUp() public {}
 
     function run() public {
         vm.startBroadcast();
 
-        entrypoint = new EntryPoint();
+        accountFactory = new AccountFactory();
 
         vm.stopBroadcast();
     }

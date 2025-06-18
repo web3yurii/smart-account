@@ -3,23 +3,23 @@ pragma solidity ^0.8.13;
 
 import {EntryPoint} from "account-abstraction/core/EntryPoint.sol";
 import {IAccount} from "account-abstraction/interfaces/IAccount.sol";
+import {PackedUserOperation} from "account-abstraction/interfaces/PackedUserOperation.sol";
 
-contract Account is IAccount {
-    EntryPoint public entryPoint;
+contract SmartAccount is IAccount {
+    address private owner;
 
-    uint public count;
+    uint256 public count;
 
-    constructor(address _entryPoint) {
-        entryPoint = EntryPoint(_entryPoint);
+    constructor(address _owner) {
+        owner = _owner;
     }
 
-    function validateUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)
+    function validateUserOp(PackedUserOperation calldata, bytes32, uint256)
         external
+        pure
         override
         returns (uint256 validationData)
     {
-        // Implement your validation logic here
-        // For now, we return a dummy value
         return 0; // Replace with actual validation logic
     }
 
@@ -30,7 +30,7 @@ contract Account is IAccount {
 
 contract AccountFactory {
     function createAccount(address owner) external returns (address) {
-        Account account = new Account(owner);
-        return account;
+        SmartAccount account = new SmartAccount(owner);
+        return address(account);
     }
 }
