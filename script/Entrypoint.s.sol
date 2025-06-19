@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
-import {EntryPoint} from "../src/Account.sol";
+import {EntryPoint} from "../src/SmartAccount.sol";
 
 contract EntrypointScript is Script {
     EntryPoint public entrypoint;

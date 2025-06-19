@@ -1,39 +1,54 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Script, console} from "forge-std/Script.sol";
-import {EntryPoint, AccountFactory, SmartAccount} from "../src/Account.sol";
+import {SmartAccountFactory, SmartAccount} from "../src/SmartAccount.sol";
+import {EntryPoint} from "account-abstraction/core/EntryPoint.sol";
 import {PackedUserOperation} from "account-abstraction/interfaces/PackedUserOperation.sol";
+import {CommonBase} from "forge-std/Base.sol";
+import {Script} from "forge-std/Script.sol";
+import {StdChains} from "forge-std/StdChains.sol";
+import {StdCheatsSafe} from "forge-std/StdCheats.sol";
+import {StdUtils} from "forge-std/StdUtils.sol";
+import {console} from "forge-std/console.sol";
 
 contract ExecuteScript is Script {
-    address payable private constant EP_ADDRESS = payable(0x9A676e781A523b5d0C0e43731313A708CB607508);
-    address private constant FACTORY_ADDRESS = 0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82;
-    uint256 private constant FACTORY_NONCE = 1;
+    address private constant EP_ADDRESS = 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512;
+    address private constant FACTORY_ADDRESS = 0x5FbDB2315678afecb367f032d93F642f64180aa3;
+    address private constant SIGNER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
 
     function setUp() public {}
 
     function run() public {
-        address payable signer0 = payable(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266);
+        EntryPoint entrypoint = EntryPoint(payable(EP_ADDRESS));
 
-        EntryPoint entrypoint = EntryPoint(EP_ADDRESS);
+        bytes memory data = abi.encodeWithSelector(SmartAccountFactory.createAccount.selector, payable(SIGNER));
+        bytes memory initCode = abi.encodePacked(FACTORY_ADDRESS, data);
+        (bool success, bytes memory revertData) =
+            EP_ADDRESS.call(abi.encodeWithSelector(EntryPoint.getSenderAddress.selector, initCode));
+        require(!success, "Expected revert");
 
-        // CREATE: hash(deployer + nonce) - use now for simplicity
+        // Check selector
+        bytes4 expectedSelector = bytes4(keccak256("SenderAddressResult(address)"));
+        bytes4 actualSelector;
+        assembly {
+            actualSelector := mload(add(revertData, 32))
+        }
+        require(actualSelector == expectedSelector, "Unexpected error selector");
 
-        // cast compute-address 0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82 --nonce 1
-        address senderAddress = 0x32467b43BFa67273FC7dDda0999Ee9A12F2AaA08;
-
-        // CREATE2: hash(deployer + nonce + initCode + salt)
-
-        bytes memory data = abi.encodeWithSelector(AccountFactory.createAccount.selector, signer0);
+        // Decode address using inline assembly
+        address sender;
+        assembly {
+            sender := mload(add(revertData, 36)) // Skip 4 bytes selector
+        }
 
         PackedUserOperation memory userOp = PackedUserOperation({
-            sender: senderAddress,
-            nonce: entrypoint.getNonce(senderAddress, 0),
-            initCode: abi.encodePacked(FACTORY_ADDRESS, data),
+            sender: sender,
+            nonce: entrypoint.getNonce(sender, 0),
+            initCode: initCode,
             callData: abi.encodeWithSelector(SmartAccount.execute.selector),
-            accountGasLimits: bytes32(abi.encodePacked(uint128(5_200_000), uint128(5_200_000))),
-            preVerificationGas: 500_000,
-            gasFees: bytes32(abi.encodePacked(uint128(20 gwei), uint128(10 gwei))),
+            accountGasLimits: bytes32(abi.encodePacked(uint128(200_000), uint128(100_000))),
+            preVerificationGas: 0,
+            gasFees: bytes32(abi.encodePacked(uint128(1 gwei), uint128(2 gwei))),
             paymasterAndData: "",
             signature: ""
         });
@@ -44,15 +59,11 @@ contract ExecuteScript is Script {
         vm.startBroadcast();
 
         // Prefund the entrypoint
-        //        entrypoint.depositTo{value: 10 ether}(senderAddress);
+        entrypoint.depositTo{value: 100 ether}(sender);
 
-        // Handle the user operation
-        entrypoint.handleOps(userOps, payable(address(0x326794fBB97ed389B2b1F6eF39006CB08ED89046)));
+        //        // Handle the user operation
+        entrypoint.handleOps(userOps, payable(SIGNER));
 
         vm.stopBroadcast();
-    }
-
-    receive() external payable {
-        console.log("Received %s wei", msg.value);
     }
 }

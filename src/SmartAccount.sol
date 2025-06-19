@@ -28,7 +28,7 @@ contract SmartAccount is IAccount {
     }
 }
 
-contract AccountFactory {
+contract SmartAccountFactory {
     function createAccount(address owner) external returns (address) {
         SmartAccount account = new SmartAccount(owner);
         return address(account);

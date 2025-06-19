@@ -2,17 +2,17 @@
 pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
-import {AccountFactory} from "../src/Account.sol";
+import {SmartAccountFactory} from "../src/SmartAccount.sol";
 
-contract AccountFactoryScript is Script {
-    AccountFactory public accountFactory;
+contract SmartAccountFactoryScript is Script {
+    SmartAccountFactory public smartAccountFactory;
 
     function setUp() public {}
 
     function run() public {
         vm.startBroadcast();
 
-        accountFactory = new AccountFactory();
+        smartAccountFactory = new SmartAccountFactory();
 
         vm.stopBroadcast();
     }
