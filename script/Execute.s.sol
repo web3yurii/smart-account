@@ -34,7 +34,7 @@ contract ExecuteScript is Script {
         PackedUserOperation memory userOp = PackedUserOperation({
             sender: sender,
             nonce: entrypoint.getNonce(sender, 0),
-            initCode: initCode,
+            initCode: sender.code.length > 0 ? new bytes(0) : initCode,
             callData: abi.encodeWithSelector(SmartAccount.execute.selector),
             accountGasLimits: bytes32(abi.encodePacked(uint128(1_200_000), uint128(50_000))),
             preVerificationGas: 0,

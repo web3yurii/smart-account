@@ -14,7 +14,7 @@ contract SmartAccountTest is Test {
     EntryPoint private entrypoint;
 
     function setUp() public {
-        smartAccount = SmartAccount(0xa16E02E87b7454126E5E10d957A927A7F5B5d2be);
+        smartAccount = SmartAccount(0x64a68E6f6F50222a6Dc549B44E11f2D403C523CA);
         paymaster = Paymaster(0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0);
         entrypoint = EntryPoint(payable(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512));
     }
